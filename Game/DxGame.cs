@@ -24,6 +24,7 @@ namespace JA.Game
             Bricks = new List<Brick>();
             Target = target;
             Timer = new Timer();
+            Timer.Enabled = false;
             Gravity = new Vector2(0, 1);
             target.Resize += (s, ev) => OnResize();
             target.Paint += (s, ev) => OnDraw(ev.Graphics);
@@ -137,6 +138,11 @@ namespace JA.Game
                 }
             }
 
+            if (Bricks.Count == 0)
+            {
+                Timer.Enabled = false;
+            }
+
             if (!Ball.Fixed && Paddle.Intersects(Ball, out var point, out var normal))
             {
                 Ball.ImpactPlane(point, normal, Paddle.Velocity, 1.2f, 0.2f);
@@ -159,7 +165,7 @@ namespace JA.Game
             switch (key)
             {
                 case Keys.Space:
-                    Timer.Enabled = !Timer.Enabled;
+                    Timer.Enabled = !Timer.Enabled;                    
                     Update?.Invoke(this, new EventArgs());
                     break;
                 case Keys.Escape:
@@ -232,6 +238,14 @@ namespace JA.Game
         public void OnDraw(Graphics graphics)
         {
             graphics.SmoothingMode = SmoothingMode.HighQuality;
+
+            if (!Timer.Enabled)
+            {
+                const string text = "Press SPACE to Play.";
+                SizeF sz = graphics.MeasureString(text, Target.Font);
+                graphics.DrawString(text, Target.Font, Brushes.Red, Target.Width/2-sz.Width/2, Target.Height/2-sz.Height/2);
+            }
+
 
             if (Paddle.Visible)
             {
