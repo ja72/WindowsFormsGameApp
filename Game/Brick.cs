@@ -6,23 +6,19 @@ namespace JA.Game
 {
     using static Geometry;
 
-    public class Brick : BaseSprite, IBounce
+    public class Brick : PhysicsObject
     {
         private int _strength;
 
         public Brick(Color color, int strength=1) : base(color)
         {
             Size = new Vector2(12f, 4f);
+            Fixed = true;
+            AngleDeg = 0;
+            Omega = 0;
             Strength = strength;
         }
-
-        public float Left { get => Center.X - Size.X / 2; }
-        public float Right { get => Center.X + Size.X / 2; }
-        public float Top { get => Center.Y - Size.Y / 2; }
-        public float Bottom { get => Center.Y + Size.Y / 2; }
-
-        public Vector2 Center { get; set; }
-        public Vector2 Velocity { get; set; }
+        public override float Mmoi => Mass / 12 * (Size.X * Size.X + Size.Y * Size.Y);
         public Vector2 Size { get; set; }
         public int Strength
         {
@@ -47,15 +43,15 @@ namespace JA.Game
         /// <param name="target">The target point.</param>
         /// <param name="normal">The normal vector at the resulting point.</param>
         /// <returns>A point.</returns>
-        public Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal)
+        public override Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal)
         {
             // a --- b
             // |     |
             // c --- d
-            Vector2 a = Center + new Vector2(-Size.X / 2, -Size.Y / 2);
-            Vector2 b = Center + new Vector2(Size.X / 2, -Size.Y / 2);
-            Vector2 c = Center + new Vector2(-Size.X / 2, Size.Y / 2);
-            Vector2 d = Center + new Vector2(Size.X / 2, Size.Y / 2);
+            Vector2 a = Center + new Vector2(-Size.X / 2, -Size.Y / 2).Rotate(AngleDeg*pi/180);
+            Vector2 b = Center + new Vector2(Size.X / 2, -Size.Y / 2).Rotate(AngleDeg*pi/180);
+            Vector2 c = Center + new Vector2(-Size.X / 2, Size.Y / 2).Rotate(AngleDeg*pi/180);
+            Vector2 d = Center + new Vector2(Size.X / 2, Size.Y / 2).Rotate(AngleDeg*pi/180);
 
             Vector2 n_ab = (a - b).GetNormal();
             Vector2 n_ca = (c - a).GetNormal();
@@ -133,6 +129,10 @@ namespace JA.Game
             return Vector2.Zero;
         }
 
+        public bool Impact(Ball ball, float cor, float friction)
+        {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Draws the brick.
@@ -144,14 +144,19 @@ namespace JA.Game
             SizeF pixel_dia = game.GetSpan(Size);
             PointF pixel_cen = game.GetPixel(Center);
 
+            var state = graphics.Save();
+
+            graphics.TranslateTransform(pixel_cen.X, pixel_cen.Y);
+            graphics.RotateTransform(-AngleDeg);
+
             graphics.FillRectangle(Fill,
-                pixel_cen.X - pixel_dia.Width / 2,
-                pixel_cen.Y - pixel_dia.Height / 2,
+                - pixel_dia.Width / 2,
+                - pixel_dia.Height / 2,
                 pixel_dia.Width, pixel_dia.Height);
 
             graphics.DrawRectangle(Pen,
-                pixel_cen.X - pixel_dia.Width / 2,
-                pixel_cen.Y - pixel_dia.Height / 2,
+                - pixel_dia.Width / 2,
+                - pixel_dia.Height / 2,
                 pixel_dia.Width, pixel_dia.Height);
 
             //var hit = GetClosestPointTo(game.Ball.Center, out var n);
@@ -159,6 +164,8 @@ namespace JA.Game
             //graphics.FillEllipse(Brushes.YellowGreen,
             //    pixel_hit.X - 4, pixel_hit.Y - 4,
             //    8, 8);
+
+            graphics.Restore(state);
         }
     }
 }

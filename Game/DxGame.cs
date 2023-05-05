@@ -7,15 +7,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Numerics;
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace JA.Game
 {
-    using System.Diagnostics;
     using static Geometry;
 
     public class DxGame
     {
         public event EventHandler Update;
+
+        [DllImport("user32.dll")]
+        static extern int GetCursorPos(out Point lpPoint);
 
         public DxGame(Control target)
         {
@@ -23,8 +27,10 @@ namespace JA.Game
             Paddle = new Paddle();
             Bricks = new List<Brick>();
             Target = target;
-            Timer = new Timer();
-            Timer.Enabled = false;
+            Timer = new Timer
+            {
+                Enabled = false
+            };
             Gravity = new Vector2(0, 1);
             target.Resize += (s, ev) => OnResize();
             target.Paint += (s, ev) => OnDraw(ev.Graphics);
@@ -48,7 +54,6 @@ namespace JA.Game
             PaddleTarget = Paddle.Center;
             Ball.Center = new Vector2(Paddle.Center.X, Paddle.Top - Ball.Radius);
             Ball.Velocity = PolarDegrees(16f, -110);
-            Ball.Fixed = false;
 
             const int n_rows = 8;
             const int n_cols = 8;
@@ -72,14 +77,20 @@ namespace JA.Game
                 }
             }
             Update?.Invoke(this, new EventArgs());
-        }
+        }        
+
         public void OnUpdate(float elapsed)
         {
             Time += elapsed;
+
+            //GetCursorPos(out Point mouse);
+            //mouse.X -= Target.Left;
+            //mouse.Y -= Target.Top;
+            //MouseMove(mouse, MouseButtons.None);
+
             if (!Ball.Fixed)
             {
-                Ball.Velocity += elapsed * Gravity;
-                Ball.Center += elapsed * Ball.Velocity;
+                Ball.OnUpdate(elapsed, Gravity);
 
                 Ball.ImpactPlane(Vector2.Zero, Vector2.UnitX, Vector2.Zero, 0.96f, 0);
                 Ball.ImpactPlane(Vector2.Zero, Vector2.UnitY, Vector2.Zero, 1, 0);
@@ -89,8 +100,6 @@ namespace JA.Game
 
 
             float λ = .45f;
-            //float vx = (1 - λ) * Paddle.Velocity.X + λ * (PaddleTarget - Paddle.Center.X) / elapsed;
-            //Paddle.Velocity = new Vector2(vx, 0);
             Vector2 v = (1 - λ) * Paddle.Velocity + λ * (PaddleTarget - Paddle.Center) / elapsed;
             Paddle.Velocity = v;
             Paddle.Center += elapsed * Paddle.Velocity;
@@ -108,10 +117,9 @@ namespace JA.Game
             {
                 if (!brick.Fixed && brick.Visible)
                 {
-                    brick.Velocity += elapsed * Gravity;
-                    brick.Center += elapsed * brick.Velocity;
+                    brick.OnUpdate(elapsed, Gravity);
 
-                    if (brick.Bottom > PlaySize.Y)
+                    if (brick.Center.Y > PlaySize.Y)
                     {
                         brick.Visible = false;
                         brick.Fixed = true;
@@ -156,7 +164,58 @@ namespace JA.Game
             Update?.Invoke(this, new EventArgs());
 
             Target.Invalidate();
-        } 
+        }
+
+
+        public Vector2 Impact(PhysicsObject bullet, PhysicsObject target, float cor, float friction)
+        {
+            var p_1 = bullet.GetClosestPointTo(target.Center, out var n_1);
+            var p_2 = target.GetClosestPointTo(p_1, out var n_2);       
+            Vector2 normal = n_1;
+            Vector2 point = (p_1 + p_2) / 2;
+
+            Vector2 velocity_1 = bullet.GetVelocityAt(point);
+            Vector2 velocity_2 = target.GetVelocityAt(point);
+
+            float d = Vector2.Dot(normal, p_2 - p_2);
+            float v_imp = Vector2.Dot(normal, velocity_2 - velocity_1);
+
+            Vector2 impulse = Vector2.Zero;
+
+            if (d <= 0 && v_imp < 0)
+            {
+                float im_1 = bullet.GetInverseMass(normal, point);
+                float im_2 = target.GetInverseMass(normal, point);
+                float m_eff = 1 / (im_1 + im_2);
+                float J = -(1 + cor) * m_eff * v_imp;
+                Vector2 dv = velocity_2 - velocity_1 - normal * v_imp;
+                float v_slip = dv.Length();
+                if (v_slip > 0)
+                {
+                    Vector2 e_slip = Vector2.Normalize(dv);
+                    float Jf = -v_slip;
+                    Jf = Jf.Clamp(-friction * J, friction * J);
+                    impulse = normal * J + e_slip * Jf;
+                }
+                else
+                {
+                    impulse = normal * J;
+                }
+
+                bullet.ApplyImpulse( impulse, point);
+                target.ApplyImpulse(-impulse, point);
+                bullet.Center -= d/2 * normal;
+                target.Center += d/2 * normal;
+            }
+
+            bullet.ApplyImpulse(impulse, p_1);
+            target.ApplyImpulse(-impulse, p_2);
+            bullet.Center -= d/2 * normal;
+            target.Center += d/2 * normal;
+
+            return impulse;
+        }
+        
         #endregion
 
         #region User Interactions

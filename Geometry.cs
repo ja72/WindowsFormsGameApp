@@ -27,7 +27,17 @@ namespace JA
         {
             return Vector2.Normalize(new Vector2(-vector.Y, vector.X));
         }
-
+        public static Vector2 Rotate(this Vector2 vector, float angle)
+        {
+            float c = (float)Math.Cos(angle), s = (float)Math.Sin(angle);
+            return new Vector2(
+                c * vector.X - s * vector.Y,
+                s * vector.X + c * vector.Y);
+        }
+        public static Vector2 RotateAbout(this Vector2 point, float angle, Vector2 pivot)
+        {
+            return pivot + (point - pivot).Rotate(angle);
+        }
         public static (float w_A, float w_B) GetBarycentricCoord(Vector2 point, Vector2 a, Vector2 b, bool clamped = false)
         {
             Vector2 e = Vector2.Normalize(b - a);

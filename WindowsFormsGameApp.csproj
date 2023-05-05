@@ -48,7 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Game\Ball.cs" />
-    <Compile Include="Game\BaseSprite.cs" />
     <Compile Include="Game\Brick.cs" />
     <Compile Include="GameForm.cs">
       <SubType>Form</SubType>
@@ -57,7 +56,9 @@
       <DependentUpon>GameForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Game\DxGame.cs" />
+    <Compile Include="Game\GraphicsObject.cs" />
     <Compile Include="Game\Paddle.cs" />
+    <Compile Include="Game\PhysicsObject.cs" />
     <Compile Include="Geometry.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

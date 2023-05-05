@@ -4,15 +4,10 @@ using System.Numerics;
 
 namespace JA.Game
 {
-    public interface IBounce
-    {
-        Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal);
-        bool Intersects(Ball ball, out Vector2 point, out Vector2 normal);
-    }
 
-    public abstract class BaseSprite : IDisposable
+    public abstract class GraphicsObject : IDisposable
     {
-        protected BaseSprite(Color color)
+        protected GraphicsObject(Color color)
         {
             Pen = new Pen(color, 0);
             Fill = new SolidBrush(color);
@@ -41,6 +36,14 @@ namespace JA.Game
         /// <param name="graphics">The graphics object.</param>
         /// <param name="game">The game object.</param>
         public abstract void Draw(Graphics graphics, DxGame game);
+
+        /// <summary>
+        /// Gets the closest point on the object to the target point.
+        /// </summary>
+        /// <param name="target">The target point.</param>
+        /// <param name="normal">The normal vector at the resulting point.</param>
+        /// <returns>A point.</returns>
+        public abstract Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal);
 
         #region IDisposable Support
         private bool disposedValue = false; 

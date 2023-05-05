@@ -7,7 +7,7 @@ namespace JA.Game
     using System.Drawing.Drawing2D;
     using static Geometry;
 
-    public class Paddle : BaseSprite, IBounce
+    public class Paddle : GraphicsObject
     {
         public Paddle() : base(Color.Magenta)
         {
@@ -44,7 +44,7 @@ namespace JA.Game
         /// <param name="target">The target point.</param>
         /// <param name="normal">The normal vector at the resulting point.</param>
         /// <returns>A point.</returns>
-        public Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal)
+        public override Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal)
         {
             // a --- b
             // |     |

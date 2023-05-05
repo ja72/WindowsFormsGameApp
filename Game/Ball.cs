@@ -3,27 +3,22 @@ using System.Numerics;
 
 namespace JA.Game
 {
-    public class Ball : BaseSprite
+    public class Ball : PhysicsObject
     {
 
         public Ball() : base(Color.LightGray)
         {
             Diameter = 6;
+            Fixed = false;
         }
-
-        public float Left { get => Center.X - Radius; }
-        public float Right { get => Center.X + Radius; }
-        public float Top { get => Center.Y - Radius; }
-        public float Bottom { get => Center.Y + Radius; }
-
-        public Vector2 Center { get; set; }
-        public Vector2 Velocity { get; set; }
+        public override float Mmoi => Mass / 8 * Diameter * Diameter;
         public float Diameter { get; set; }
         public float Radius { get => Diameter / 2; set => Diameter = 2 * value; }
 
-        public Vector2 GetClosestPointTo(Vector2 target)
+        public override Vector2 GetClosestPointTo(Vector2 target, out Vector2 normal)
         {
-            return Center + Radius * Vector2.Normalize(target - Center);
+            normal = Vector2.Normalize(target - Center);
+            return Center + Radius * normal;
         }
 
         public Vector2 ImpactPlane(Vector2 point, Vector2 normal, Vector2 velocity, float cor, float friction)
